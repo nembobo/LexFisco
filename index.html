@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexFisco AI — Assistente Giuridico-Fiscale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1a2e;--ink2:#3d3d5c;--ink3:#7a7a9a;--ink4:#b0b0c8;
+  --cream:#f7f5f0;--cream2:#eeebe3;--cream3:#e3dfd5;--cream4:#d4cfc3;
+  --gold:#b8860b;--gold2:#d4a017;--gold3:#e8b84b;--gold-light:#f5e6c0;--gold-lighter:#fdf6e3;
+  --blue:#1e3a5f;--blue2:#2d5282;
+  --teal:#0f6e56;--teal-light:#e1f5ee;
+  --danger:#c0392b;
+  --radius:12px;--radius-lg:18px;--radius-xl:24px;
+  --shadow:0 4px 24px rgba(30,58,95,0.08);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);display:flex;flex-direction:column}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 50%,#1a3a6f 100%);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:20px}
+.splash-logo{width:72px;height:72px;background:var(--gold);border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:36px;color:var(--blue);box-shadow:0 4px 24px rgba(184,134,11,0.5);animation:popIn 0.5s ease}
+@keyframes popIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+.splash-title{font-family:'DM Serif Display',serif;font-size:32px;color:#fff}
+.splash-sub{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase}
+.splash-dots{display:flex;gap:8px;margin-top:8px}
+.splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:blink 1.4s infinite}
+.splash-dots span:nth-child(2){animation-delay:.2s}
+.splash-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+
+/* APP */
+#app{display:flex;flex-direction:column;height:100%;opacity:0;transition:opacity 0.5s}
+#app.visible{opacity:1}
+header{background:var(--blue);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);flex-shrink:0;box-shadow:0 2px 12px rgba(30,58,95,0.3)}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-icon{width:30px;height:30px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;color:var(--blue)}
+.logo-text{font-family:'DM Serif Display',serif;font-size:16px;color:#fff}
+.logo-sub{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:7px}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 9px;font-size:11px;color:rgba(255,255,255,0.5)}
+.dot-live{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+.rag-active{display:flex;align-items:center;gap:4px;background:rgba(15,110,86,0.25);border:1px solid rgba(15,110,86,0.4);border-radius:20px;padding:4px 9px;font-size:11px;color:#4ade80}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.topics{background:var(--blue);padding:0 20px 11px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
+.topic-pill{padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.5);background:transparent;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.topic-pill:hover,.topic-pill.active{background:var(--gold);color:var(--blue);border-color:var(--gold);font-weight:500}
+main{display:flex;flex:1;overflow:hidden;min-height:0}
+.sidebar{width:200px;flex-shrink:0;background:var(--cream2);border-right:1px solid var(--cream3);display:flex;flex-direction:column;overflow:hidden}
+.new-btn{margin:10px;padding:9px 12px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.new-btn:hover{background:var(--blue2)}
+.sidebar-section{padding:7px 12px 3px;font-size:10px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+.sidebar-list{overflow-y:auto;flex:1}
+.convo-item{padding:8px 12px;cursor:pointer;border-left:3px solid transparent;transition:all 0.15s}
+.convo-item:hover{background:var(--cream3);border-left-color:var(--gold2)}
+.convo-item.active{background:var(--cream3);border-left-color:var(--gold)}
+.convo-title{font-size:12px;color:var(--ink2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text}
+.convo-item.active .convo-title{color:var(--ink);font-weight:500}
+.convo-date{font-size:10px;color:var(--ink3);margin-top:1px}
+.convo-title-input{font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;border:none;outline:none;background:transparent;width:100%;border-bottom:1px solid var(--gold);padding-bottom:1px}
+.convo-rename-hint{font-size:9px;color:var(--ink3);margin-top:2px;opacity:0;transition:opacity 0.2s}
+.convo-item.active:hover .convo-rename-hint{opacity:1}
+.convo-delete{float:right;cursor:pointer;color:var(--ink3);font-size:14px;opacity:0;transition:opacity 0.2s;line-height:1;margin-left:4px}
+.convo-item:hover .convo-delete{opacity:0.5}
+.convo-delete:hover{opacity:1!important;color:var(--danger)}
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.messages{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--cream4);border-radius:4px}
+.welcome{margin:auto;max-width:500px;text-align:center;padding:20px}
+.welcome-emblem{width:64px;height:64px;background:var(--gold-light);border:2px solid var(--gold);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:30px;color:var(--gold)}
+.welcome h2{font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);margin-bottom:6px}
+.welcome-sub{font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:10px}
+.rag-info{display:inline-flex;align-items:center;gap:6px;background:var(--teal-light);border:1px solid rgba(15,110,86,0.2);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--teal);margin-bottom:18px}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;text-align:left}
+.quick-card{padding:11px 13px;background:#fff;border:1px solid var(--cream3);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--ink2);transition:all 0.2s;line-height:1.5}
+.quick-card:hover{border-color:var(--gold);background:var(--gold-lighter);color:var(--ink)}
+.quick-card strong{display:block;font-size:10px;font-weight:500;color:var(--ink3);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px}
+.msg{display:flex;gap:9px;animation:fadeUp 0.3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.user{flex-direction:row-reverse}
+.avatar{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.avatar.ai{background:var(--blue);color:var(--gold)}
+.avatar.user{background:var(--gold);color:var(--blue)}
+.bubble{max-width:80%;padding:14px 18px;line-height:1.8;font-size:13.5px;border-radius:var(--radius-lg)}
+.bubble.ai{background:#fff;color:var(--ink);border:1px solid var(--cream3);border-top-left-radius:4px;box-shadow:var(--shadow)}
+.bubble.user{background:var(--blue);color:#fff;border-top-right-radius:4px;font-size:13px}
+
+/* FORMATTAZIONE RISPOSTA AI */
+.bubble.ai h1{font-family:'DM Serif Display',serif;font-size:18px;color:var(--blue);margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--gold-light)}
+.bubble.ai h1:first-child{margin-top:0}
+.bubble.ai h2{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--blue2);margin:14px 0 6px;display:flex;align-items:center;gap:6px}
+.bubble.ai h3{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink2);margin:10px 0 5px}
+.bubble.ai p{margin-bottom:8px;line-height:1.75}
+.bubble.ai p:last-child{margin-bottom:0}
+.bubble.ai ul,.bubble.ai ol{margin:8px 0 10px 18px;line-height:1.8}
+.bubble.ai li{margin-bottom:4px}
+.bubble.ai strong{font-weight:600;color:var(--ink)}
+.bubble.ai em{font-style:italic;color:var(--ink2)}
+.bubble.ai hr{border:none;border-top:1px solid var(--cream3);margin:14px 0}
+.bubble.ai blockquote{border-left:3px solid var(--gold);padding:8px 12px;background:var(--gold-lighter);border-radius:0 8px 8px 0;margin:10px 0;font-size:13px;color:var(--ink2)}
+
+/* TABELLE */
+.bubble.ai table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;border-radius:8px;overflow:hidden}
+.bubble.ai th{background:var(--blue);color:#fff;padding:8px 12px;text-align:left;font-weight:500;font-size:12px}
+.bubble.ai td{padding:7px 12px;border-bottom:1px solid var(--cream3)}
+.bubble.ai tr:last-child td{border-bottom:none}
+.bubble.ai tr:nth-child(even) td{background:var(--cream2)}
+
+/* BADGE NORMATIVI */
+.art-badge{display:inline-block;background:var(--gold-light);color:var(--gold);border:1px solid var(--gold2);border-radius:5px;padding:1px 7px;font-size:11.5px;font-weight:600;margin:0 2px;white-space:nowrap}
+
+/* STRIP */
+.rag-strip{display:flex;align-items:flex-start;gap:7px;background:var(--teal-light);border:1px solid rgba(15,110,86,0.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--teal);margin-bottom:10px;line-height:1.5}
+.sources-strip{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid var(--cream3)}
+.source-tag{display:inline-flex;align-items:center;gap:3px;background:var(--teal-light);border:1px solid rgba(15,110,86,0.15);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--teal)}
+.disclaimer-strip{display:flex;align-items:flex-start;gap:7px;background:var(--gold-lighter);border:1px solid var(--gold-light);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--gold);margin-top:10px;line-height:1.5}
+.searching-strip{display:flex;align-items:center;gap:8px;background:var(--teal-light);border:1px solid rgba(15,110,86,0.2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--teal);margin-bottom:7px}
+.search-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--teal);margin:0 1px;animation:bounce 1.2s infinite}
+.search-dots span:nth-child(2){animation-delay:.15s}
+.search-dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.typing-wrap{display:flex;gap:5px;align-items:center;padding:4px 0}
+.typing-wrap span{width:7px;height:7px;border-radius:50%;background:var(--ink3);animation:bounce 1.2s infinite}
+.typing-wrap span:nth-child(2){animation-delay:.15s}
+.typing-wrap span:nth-child(3){animation-delay:.3s}
+.input-zone{padding:12px 22px 16px;background:var(--cream);border-top:1px solid var(--cream3);flex-shrink:0}
+.input-box{background:#fff;border:1.5px solid var(--cream3);border-radius:var(--radius-lg);display:flex;align-items:flex-end;gap:7px;padding:9px 9px 9px 14px;transition:border-color 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.input-box:focus-within{border-color:var(--gold)}
+#userInput{flex:1;border:none;outline:none;resize:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:transparent;min-height:22px;max-height:110px;line-height:1.6}
+#userInput::placeholder{color:var(--ink4)}
+.send-btn{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.send-btn:hover{background:var(--gold)}
+.send-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.send-btn:hover svg{stroke:var(--blue)}
+.input-footer{font-size:10px;color:var(--ink3);margin-top:7px;text-align:center;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">§</div>
+  <div class="splash-title">LexFisco AI</div>
+  <div class="splash-sub">Assistente Giuridico-Fiscale</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="logo-wrap">
+      <div class="logo-icon">§</div>
+      <div>
+        <div class="logo-text">LexFisco AI</div>
+        <div class="logo-sub">Assistente Giuridico-Fiscale</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="rag-active">🗄️ Database attivo</div>
+      <div class="live-badge"><span class="dot-live"></span>Attivo</div>
+    </div>
+  </header>
+
+  <div class="topics">
+    <button class="topic-pill active" onclick="setTopic(this)">Tutti</button>
+    <button class="topic-pill" onclick="setTopic(this)">IRPEF &amp; Redditi</button>
+    <button class="topic-pill" onclick="setTopic(this)">IVA</button>
+    <button class="topic-pill" onclick="setTopic(this)">Società</button>
+    <button class="topic-pill" onclick="setTopic(this)">Lavoro &amp; CCNL</button>
+    <button class="topic-pill" onclick="setTopic(this)">INPS &amp; Previdenza</button>
+    <button class="topic-pill" onclick="setTopic(this)">Tributi Locali</button>
+    <button class="topic-pill" onclick="setTopic(this)">Successioni</button>
+    <button class="topic-pill" onclick="setTopic(this)">F24</button>
+    <button class="topic-pill" onclick="setTopic(this)">Contenzioso</button>
+    <button class="topic-pill" onclick="setTopic(this)">Internazionale</button>
+  </div>
+
+  <main>
+    <div class="sidebar">
+      <button class="new-btn" onclick="newChat()"><span style="font-size:15px">+</span> Nuova consulenza</button>
+      <div class="sidebar-section">Recenti</div>
+      <div class="sidebar-list" id="sidebarList">
+        <div class="convo-item active" ondblclick="renameConvo(this)">
+          <span class="convo-delete" onclick="deleteConvo(event,this)" title="Elimina">×</span>
+          <div class="convo-title">Nuova sessione</div>
+          <div class="convo-date">Adesso</div>
+          <div class="convo-rename-hint">✏️ doppio clic per rinominare</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-wrap">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-emblem">§</div>
+          <h2>LexFisco AI</h2>
+          <p class="welcome-sub">Assistente giuridico-fiscale con database normativo aggiornato, CCNL, INPS e ricerca web in tempo reale.</p>
+          <div class="rag-info">🗄️ Database normativo + ricerca web attivi</div>
+          <div class="quick-grid">
+            <div class="quick-card" onclick="ask('Ho una SRL con utili 2023 non distribuiti: come ottimizzare fiscalmente?')"><strong>💼 Società</strong>SRL — ottimizzare utili non distribuiti</div>
+            <div class="quick-card" onclick="ask('Aliquote contributive INPS per artigiani e commercianti 2025?')"><strong>🏛️ INPS</strong>Aliquote contributive 2025</div>
+            <div class="quick-card" onclick="ask('CCNL agenti di assicurazione ANAPA UNAPASS: minimi retributivi?')"><strong>📋 CCNL</strong>Agenti assicurazione ANAPA/UNAPASS</div>
+            <div class="quick-card" onclick="ask('Come funziona il ravvedimento operoso nel 2025?')"><strong>⚠️ Adempimenti</strong>Ravvedimento operoso 2025</div>
+            <div class="quick-card" onclick="ask('Dichiarazione di successione: immobile e conto corrente?')"><strong>🏠 Successioni</strong>Dichiarazione di successione</div>
+            <div class="quick-card" onclick="ask('Regime forfettario: posso aprire una seconda partita IVA?')"><strong>📄 Partita IVA</strong>Forfettario + seconda P.IVA</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-zone">
+        <div class="input-box">
+          <textarea id="userInput" placeholder="Descrivi il caso: soggetto, situazione, domanda…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="input-footer">🗄️ Database normativo + CCNL · 🔍 Ricerca web · ⚖️ Risposte orientative — verificare con il professionista responsabile</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SYSTEM=`Sei LexFisco AI, un assistente giuridico-fiscale italiano di altissimo livello per studi commercialisti.
+
+## MATERIE COPERTE
+- Diritto Tributario: IRPEF, IRES, IVA, IRAP, IMU, imposta registro, successioni, donazioni, bollo
+- Dichiarazioni: 730, Redditi PF/SP/SC/ENC, CU, ISA, ravvedimento operoso
+- Diritto Societario: SRL, SPA, SNC, SAS; costituzione, trasformazione, fusione, liquidazione
+- Lavoro e Previdenza: contratti, CIG, TFR, INPS, INAIL, CCNL, gestione separata
+- Diritto Privato: contratti, obbligazioni, successioni, donazioni, trust
+- Pianificazione Fiscale: ACE, patent box, rivalutazioni, affrancamenti, holding
+- Contenzioso: avvisi bonari, cartelle, ricorsi CTP/CTR, mediazione, autotutela, rottamazione
+- Adempimenti: F24, INTRASTAT, liquidazioni IVA, esterometro
+- Normativa internazionale: convenzioni doppie imposizioni, CFC, DAC6, Pillar Two
+- CCNL: tutti i principali contratti collettivi italiani
+
+## ISTRUZIONI DI FORMATTAZIONE — OBBLIGATORIE
+Usa sempre markdown corretto:
+- # per titolo principale (uno solo per risposta)
+- ## per sezioni principali
+- ### per sottosezioni
+- **testo** per grassetto (norme, articoli, scadenze importanti)
+- - oppure 1. per elenchi
+- | col1 | col2 | per tabelle con intestazione
+- > per note importanti o avvertenze
+- --- per separatori tra sezioni
+
+Risposte SINTETICHE e PRATICHE:
+- Inizia sempre con un paragrafo breve che risponde direttamente alla domanda
+- Poi sviluppa i dettagli nelle sezioni
+- Usa tabelle per confronti e dati numerici
+- Evidenzia sempre: norma applicabile, importi/aliquote, scadenze, adempimenti
+- Concludi con un "Riepilogo operativo" in 3-5 punti chiave
+- MAX 600 parole salvo casi complessi che richiedono più dettaglio
+
+## METODOLOGIA
+1. Analizza il soggetto (tipo, regime, situazione)
+2. Cita la norma precisa (**Art. 65 TUIR**, **DPR 633/72**, **L. 190/2014**...)
+3. Applica al caso concreto
+4. Indica prassi AdE quando rilevante
+5. Usa i documenti RAG quando pertinenti e citali
+
+Rispondi SEMPRE in italiano. Sii preciso, sintetico e orientato alla soluzione pratica.`;
+
+let history=[], convCount=0;
+
+async function init(){
+  setTimeout(()=>{
+    document.getElementById('splash').style.display='none';
+    document.getElementById('app').classList.add('visible');
+  }, 1200);
+}
+
+function setTopic(btn){
+  document.querySelectorAll('.topic-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,110)+'px';
+}
+
+function handleKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
+}
+
+function ask(text){
+  document.getElementById('userInput').value=text;
+  sendMsg();
+}
+
+function newChat(){
+  history=[]; convCount++;
+  const msgs=document.getElementById('messages');
+  msgs.innerHTML=`<div class="welcome" id="welcome">
+    <div class="welcome-emblem">§</div>
+    <h2>Nuova consulenza</h2>
+    <p class="welcome-sub">Descrivi il caso specifico del cliente o la domanda professionale.</p>
+    <div class="rag-info">🗄️ Database normativo + ricerca web attivi</div>
+  </div>`;
+  const list=document.getElementById('sidebarList');
+  list.querySelectorAll('.convo-item').forEach(i=>i.classList.remove('active'));
+  const item=document.createElement('div');
+  item.className='convo-item active';
+  item.setAttribute('ondblclick','renameConvo(this)');
+  item.innerHTML=`
+    <span class="convo-delete" onclick="deleteConvo(event,this)" title="Elimina">×</span>
+    <div class="convo-title">Consulenza #${convCount}</div>
+    <div class="convo-date">${new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</div>
+    <div class="convo-rename-hint">✏️ doppio clic per rinominare</div>`;
+  list.prepend(item);
+}
+
+function renameConvo(item){
+  const titleEl=item.querySelector('.convo-title');
+  const currentName=titleEl.textContent;
+  const input=document.createElement('input');
+  input.className='convo-title-input';
+  input.value=currentName;
+  titleEl.replaceWith(input);
+  input.focus();
+  input.select();
+  function salva(){
+    const nuovoNome=input.value.trim()||currentName;
+    const nuovoTitolo=document.createElement('div');
+    nuovoTitolo.className='convo-title';
+    nuovoTitolo.textContent=nuovoNome;
+    input.replaceWith(nuovoTitolo);
+  }
+  input.addEventListener('blur',salva);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();salva();}
+    if(e.key==='Escape'){input.value=currentName;salva();}
+  });
+}
+
+function deleteConvo(e, btn){
+  e.stopPropagation();
+  const item=btn.closest('.convo-item');
+  const wasActive=item.classList.contains('active');
+  item.remove();
+  if(wasActive){
+    const first=document.getElementById('sidebarList').querySelector('.convo-item');
+    if(first) first.classList.add('active');
+    else newChat();
+  }
+}
+
+function addMsg(role,html){
+  const w=document.getElementById('welcome');
+  if(w) w.remove();
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  div.innerHTML=`<div class="avatar ${role}">${role==='ai'?'§':'Tu'}</div><div class="bubble ${role}">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function showTyping(searching=false){
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className='msg ai'; div.id='typing';
+  if(searching){
+    div.innerHTML=`<div class="avatar ai">§</div><div class="bubble ai">
+      <div class="searching-strip"><div class="search-dots"><span></span><span></span><span></span></div>Ricerca nel database normativo e sul web…</div>
+    </div>`;
+  } else {
+    div.innerHTML=`<div class="avatar ai">§</div><div class="bubble ai"><div class="typing-wrap"><span></span><span></span><span></span></div></div>`;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// Markdown parser completo
+function parseMarkdown(text){
+  // Tabelle
+  text=text.replace(/\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n?)+)/g,(match,header,rows)=>{
+    const ths=header.split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');
+    const trs=rows.trim().split('\n').map(row=>{
+      const tds=row.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('');
+      return `<tr>${tds}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+  // Titoli
+  text=text.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  text=text.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  text=text.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  // Separatori
+  text=text.replace(/^---$/gm,'<hr>');
+  // Blockquote
+  text=text.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+  // Grassetto e corsivo
+  text=text.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  text=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  text=text.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  // Badge normativi
+  text=text.replace(/\b(Art\.\s*\d+[\w\-]*(?:\s*(?:TUIR|c\.c\.|DPR|D\.Lgs\.|L\.))?[^\s,;.]*|DPR\s*\d+\/\d+|D\.Lgs\.\s*\d+\/\d+|L\.\s*\d+\/\d+|Circolare\s*(?:AdE\s*)?n\.\s*[\d\/]+)/g,'<span class="art-badge">$&</span>');
+  // Liste ordinate
+  text=text.replace(/^\d+\.\s(.+)$/gm,'<li>$1</li>');
+  text=text.replace(/(<li>.*<\/li>)/s,(match)=>`<ol>${match}</ol>`);
+  // Liste non ordinate
+  text=text.replace(/^[-•]\s(.+)$/gm,'<li>$1</li>');
+  // Paragrafi
+  const lines=text.split('\n');
+  let result='', inList=false, inOl=false;
+  for(let line of lines){
+    if(line.startsWith('<li>')){
+      if(!inList){ result+='<ul>'; inList=true; }
+      result+=line;
+    } else {
+      if(inList){ result+='</ul>'; inList=false; }
+      if(line.match(/^<(h[123]|hr|blockquote|table|ol|ul)/)){
+        result+=line;
+      } else if(line.trim()===''){
+        result+='';
+      } else {
+        result+=`<p>${line}</p>`;
+      }
+    }
+  }
+  if(inList) result+='</ul>';
+  return result;
+}
+
+async function cercaNelDatabase(domanda){
+  try{
+    const r=await fetch('/api/search',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:domanda})
+    });
+    if(!r.ok) return [];
+    const data=await r.json();
+    return data.docs||[];
+  } catch(e){ return []; }
+}
+
+function costruisciContestoRag(docs){
+  if(!docs||docs.length===0) return '';
+  let ctx='\n\n## DOCUMENTI DAL DATABASE NORMATIVO\n';
+  docs.forEach((d,i)=>{
+    ctx+=`### [DOC ${i+1}] ${d.titolo}\n`;
+    ctx+=`Fonte: ${d.fonte} | Tipo: ${d.tipo} | Data: ${d.data_pubblicazione||'n.d.'}\n\n`;
+    if(d.contenuto) ctx+=d.contenuto.substring(0,1500)+'\n\n';
+  });
+  return ctx;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('userInput');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value=''; inp.style.height='auto';
+
+  addMsg('user',text.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  history.push({role:'user',content:text});
+  showTyping(true);
+
+  const ragDocs=await cercaNelDatabase(text);
+  const ragContext=costruisciContestoRag(ragDocs);
+  const systemWithRag=SYSTEM+ragContext;
+
+  try{
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history, system:systemWithRag})
+    });
+
+    const data=await res.json();
+    if(!res.ok){
+      document.getElementById('typing')?.remove();
+      addMsg('ai',`<span style="color:var(--danger)">Errore: ${data.error||'Riprova.'}</span>`);
+      return;
+    }
+
+    let messages=[...history];
+    let currentData=data;
+    let webUsed=false;
+
+    while(currentData.stop_reason==='tool_use'){
+      webUsed=true;
+      const toolBlocks=currentData.content.filter(b=>b.type==='tool_use');
+      messages.push({role:'assistant',content:currentData.content});
+      const toolResults=toolBlocks.map(block=>({type:'tool_result',tool_use_id:block.id,content:'Search completed'}));
+      messages.push({role:'user',content:toolResults});
+      const res2=await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:messages, system:systemWithRag})
+      });
+      currentData=await res2.json();
+    }
+
+    document.getElementById('typing')?.remove();
+
+    const reply=currentData.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||'Nessuna risposta.';
+    history.push({role:'assistant',content:reply});
+
+    let ragHtml='';
+    if(ragDocs.length>0){
+      const fonti=[...new Set(ragDocs.map(d=>d.fonte))];
+      ragHtml=`<div class="rag-strip">🗄️ <span>Arricchita con ${ragDocs.length} documento/i dal database: ${fonti.join(', ')}</span></div>`;
+    }
+
+    const tags=[...new Set(ragDocs.map(d=>d.fonte))].map(f=>`<span class="source-tag">📚 ${f}</span>`).join('');
+    const webTag=webUsed?'<span class="source-tag">🔍 Ricerca web</span>':'';
+    const sourcesHtml=(tags||webTag)?`<div class="sources-strip">${tags}${webTag}</div>`:'';
+    const disclaimer=`<div class="disclaimer-strip">⚖️ Risposta orientativa. Verificare con il professionista responsabile prima di procedere.</div>`;
+
+    addMsg('ai', ragHtml + parseMarkdown(reply) + sourcesHtml + disclaimer);
+
+    if(history.length===2){
+      const short=text.length>38?text.substring(0,38)+'…':text;
+      const active=document.querySelector('.convo-item.active .convo-title');
+      if(active) active.textContent=short;
+    }
+
+  } catch(e){
+    document.getElementById('typing')?.remove();
+    addMsg('ai','<span style="color:var(--danger)">Errore di connessione. Riprova.</span>');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
