@@ -7,26 +7,31 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(500).json({ error: 'Credenziali DB mancanti' });
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'Chiave API non configurata' });
 
-  const { query } = req.body;
-  if (!query) return res.status(400).json({ error: 'Query mancante' });
+  const { messages, system } = req.body;
+  if (!messages) return res.status(400).json({ error: 'Messaggi mancanti' });
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cerca_norme`, {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({ query_text: query, limite: 4 })
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        system: system || '',
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: messages
+      })
     });
 
-    const docs = await response.json();
-    return res.status(200).json({ docs: docs || [] });
+    const data = await response.json();
+    return res.status(response.status).json(data);
 
   } catch (e) {
     return res.status(500).json({ error: e.message });
